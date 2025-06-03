@@ -1,0 +1,72 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "prefixes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "prefix", "order": "ASCENDING" },
+        { "fieldPath": "chunkIndex", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "prefixes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "prefix", "order": "ASCENDING" },
+        { "fieldPath": "minLength", "order": "ASCENDING" },
+        { "fieldPath": "maxLength", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "prefixes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "prefix", "order": "ASCENDING" },
+        { "fieldPath": "wordCount", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "leaderboard",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "mode", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "ASCENDING" },
+        { "fieldPath": "score", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "leaderboard",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "ASCENDING" },
+        { "fieldPath": "score", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "game_analytics",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "game_analytics",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gameMode", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "performance_metrics",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+} 
