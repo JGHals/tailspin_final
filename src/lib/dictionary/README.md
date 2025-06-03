@@ -1,126 +1,208 @@
-# Dictionary System Architecture
+# Tailspin Dictionary System
 
-## Overview
-The TailSpin dictionary system uses a dual-implementation approach to optimize for both performance and functionality:
+## Architecture Overview
+The dictionary system uses a multi-tiered approach optimized for both performance and reliability. Each layer serves a specific purpose in the game's architecture, working together to provide fast UI responses while maintaining data integrity and game state.
 
-1. **Firebase Dictionary** (`firebase-dictionary.ts`)
-   - Primary implementation for game operations
-   - Handles persistent storage and async operations
-   - Provides real-time updates and multiplayer support
-   - Used for game state, daily puzzles, and leaderboards
+```ascii
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  UI Components  │     │   Game Logic     │     │ Admin Services  │
+└───────┬─────────┘     └────────┬─────────┘     └────────┬────────┘
+        │                        │                         │
+        ▼                        ▼                         ▼
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│ DictionaryService│     │  DictionaryCore  │     │ FirebaseDict    │
+│ (Sync/Local)    │     │  (Game Features) │     │ (Persistence)   │
+└───────┬─────────┘     └────────┬─────────┘     └────────┬────────┘
+        │                        │                         │
+        └────────────────────────┴─────────────────────────┘
+                               │
+                     ┌─────────┴──────────┐
+                     │  DictionaryAccess  │
+                     │  (Unified API)     │
+                     └──────────────────┬─┘
+                                       │
+                                       ▼
+                              Client Applications
+```
 
-2. **Local Dictionary Service** (`dictionary.service.ts`)
-   - Performance-focused implementation
-   - Provides synchronous operations for UI responsiveness
-   - Handles client-side caching and offline support
-   - Used for rapid validation and user feedback
+## Component Responsibilities
 
-## Integration Points
+### DictionaryService (Synchronous Layer)
+Located in `src/lib/services/dictionary.service.ts`
 
-### Game Mode Manager
-- Uses `dictionaryAccess` for:
-  - Word validation
-  - Getting words with specific prefixes
-  - Random word generation (endless mode)
-  - Chain validation
-
-### Daily Puzzle Generation
-- Uses both implementations:
-  - Firebase: Puzzle storage and validation paths
-  - Local: Quick word validation during generation
-- Handles path finding and difficulty calculation
-
-### Chain Validation
-- Firebase: Main game operations and persistence
-- Local: Real-time validation and terminal detection
-
-## Performance Optimization
-
-### Caching Strategy
-- Firebase Dictionary:
-  - Chunk-based prefix caching
-  - Metadata caching
-  - Real-time updates
-- Local Dictionary:
-  - In-memory word set
-  - Prefix map for quick lookups
-  - Valid prefix set
-
-### When to Use Each Service
-
-#### Use Firebase Dictionary For:
-- Game state persistence
-- Daily puzzle operations
-- Multiplayer features
-- Leaderboard operations
-
-#### Use Local Dictionary For:
-- UI feedback
-- Word validation during typing
-- Quick prefix lookups
+Primary responsibility: Fast, synchronous operations for UI responsiveness
+- Immediate word validation feedback
+- In-memory prefix lookups
+- Client-side caching
 - Offline support
+- Performance-critical path operations
 
-## File Structure
-```
-src/lib/dictionary/
-├── firebase-dictionary.ts    # Primary implementation
-├── dictionary-access.ts      # Singleton access point
-├── types.ts                 # Shared type definitions
-└── unified-cache.ts         # Shared caching utilities
-```
+Key Features:
+- Synchronous API for UI interactions
+- Minimal memory footprint
+- O(1) word validation
+- Fast prefix matching
 
-## Usage Examples
+### DictionaryCore (Feature Layer)
+Located in `src/lib/dictionary/dictionary-core.ts`
 
-### Game Operations
+Primary responsibility: Game mechanics and word chain validation
+- Complete word chain validation
+- Terminal word detection
+- Game state management
+- Word scoring support
+- Rich game features
+
+Key Features:
+- Comprehensive game rule implementation
+- State tracking and validation
+- Support for game modes
+- Integration with scoring system
+
+### FirebaseDictionary (Persistence Layer)
+Located in `src/lib/dictionary/firebase-dictionary.ts`
+
+Primary responsibility: Data persistence and synchronization
+- Cross-device state management
+- Dictionary updates and versioning
+- Analytics support
+- Administrative operations
+- Real-time synchronization
+
+Key Features:
+- Reliable data persistence
+- Cross-device gameplay support
+- Dictionary version control
+- Analytics and monitoring
+
+### DictionaryAccess (Unified API)
+Located in `src/lib/dictionary/dictionary-access.ts`
+
+Primary responsibility: Unified access point for dictionary operations
+- Coordinated access to all layers
+- Consistent interface
+- Error handling
+- Migration support
+
+## Usage Patterns
+
+### UI Components
 ```typescript
-// Initialize both services
-await dictionaryAccess.initialize();
-const localDict = new DictionaryService();
+// Fast, synchronous operations for UI feedback
+const dictionaryService = new DictionaryService();
 
-// Game move validation
-const isValidMove = await dictionaryAccess.isValidWord(word);
-const isValidChain = dictionaryAccess.isValidChain(prevWord, word);
+// Immediate word validation
+if (dictionaryService.isValidWord(word)) {
+  // Update UI immediately
+}
 
-// Quick UI feedback
-const isValidInstant = localDict.isValidWord(word);
-const hasValidMoves = localDict.hasWordsWithPrefix(prefix);
+// Quick prefix lookups for suggestions
+const suggestions = dictionaryService.findWordsWithPrefix(prefix);
 ```
 
-### Daily Puzzle Generation
+### Game Logic
 ```typescript
-// Generate new puzzle
-const puzzle = await generateDailyPuzzle({
-  validateWord: (word) => dictionaryAccess.isValidWord(word),
-  findPaths: async (start, target) => {
-    // Use local dict for quick path exploration
-    const quickPaths = localDict.findPossiblePaths(start, target);
-    // Validate final paths with Firebase
-    return dictionaryAccess.validatePaths(quickPaths);
-  }
-});
+// Rich game features with persistence
+const dictionaryAccess = new DictionaryAccess();
+
+// Validate word chains
+const result = await dictionaryAccess.validateWordChain(chain);
+if (result.isTerminalWord) {
+  // Handle terminal word mechanics
+}
+
+// Handle game state
+const gameState = await dictionaryAccess.getGameState();
 ```
 
 ## Performance Considerations
 
-1. **Initialization**
-   - Load local dictionary early in app lifecycle
-   - Initialize Firebase dictionary for game features
-   - Cache frequently used prefixes
+### Caching Strategy
+1. Memory Cache (DictionaryService)
+   - In-memory Set for O(1) lookups
+   - Prefix map for quick suggestions
+   - Minimal memory footprint
 
-2. **Operation Selection**
-   - Use local service for < 100ms operations
-   - Use Firebase for persistent operations
-   - Combine both for complex operations
+2. IndexedDB Cache
+   - Persistent local storage
+   - Offline support
+   - Version management
 
-3. **Caching**
-   - Implement prefix-based chunk loading
-   - Cache validation results
-   - Store common word paths
+3. Firebase Backend
+   - Source of truth
+   - Cross-device sync
+   - Analytics and monitoring
+
+### Offline Support
+- Local caching ensures gameplay continues without network
+- Sync queue for pending operations
+- Automatic reconciliation on reconnect
+
+### Network Optimization
+- Batch operations for efficiency
+- Delta updates for dictionary changes
+- Lazy loading of extended features
+
+## Implementation Guidelines
+
+### When to Use Each Layer
+
+1. Use DictionaryService for:
+   - Word validation during typing
+   - Immediate UI feedback
+   - Prefix-based suggestions
+   - Power-up validations
+
+2. Use DictionaryCore for:
+   - Game rule validation
+   - Chain validation
+   - Terminal word detection
+   - Score calculations
+
+3. Use FirebaseDictionary for:
+   - Game state persistence
+   - Cross-device gameplay
+   - Dictionary updates
+   - Analytics
+
+4. Use DictionaryAccess when:
+   - Implementing new features
+   - Handling complex operations
+   - Managing game state
+   - Requiring unified access
 
 ## Error Handling
 
-Both services implement robust error handling:
-- Network failures (Firebase)
-- Invalid word submissions
-- Dictionary initialization errors
-- Cache invalidation 
+Each layer implements appropriate error handling:
+
+1. DictionaryService
+   - Returns false for invalid operations
+   - No throws in critical paths
+   - Fallback to offline mode
+
+2. DictionaryCore
+   - Detailed validation results
+   - Game rule violations
+   - State inconsistencies
+
+3. FirebaseDictionary
+   - Network errors
+   - Sync conflicts
+   - Version mismatches
+
+## Testing Strategy
+
+Each component has dedicated tests:
+- Unit tests for individual layers
+- Integration tests for layer interaction
+- Performance tests for critical paths
+- Network resilience tests
+
+## Future Considerations
+
+The multi-tiered architecture supports:
+- New game modes
+- Extended dictionary features
+- Enhanced analytics
+- Performance optimizations
+- Cross-platform support 

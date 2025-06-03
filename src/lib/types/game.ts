@@ -51,33 +51,56 @@ export interface ChainStats {
   pathDifficulty: 'easy' | 'medium' | 'hard';
 }
 
+/**
+ * Represents the complete state of a game session.
+ * Used across all layers of the state management system.
+ */
 export interface GameState {
+  /** Current game mode */
   mode: GameMode;
+  /** Sequence of words in the current chain */
   chain: string[];
+  /** Initial word of the chain */
   startWord: string;
+  /** Target word for daily challenges */
   targetWord?: string;
+  /** Whether the game has been completed */
   isComplete: boolean;
+  /** Current score information */
   score: GameScore;
+  /** Timing information for each word played */
   wordTimings: Map<string, number>;
+  /** Set of discovered terminal words */
   terminalWords: Set<string>;
+  /** Last error message if any */
   lastError?: string;
+  /** Timestamp when game started */
   startTime: number;
+  /** Timestamp of last move */
   lastMoveTime: number;
+  /** Daily puzzle specific information */
   dailyPuzzle?: {
     date: string;
     parMoves: number;
   };
+  /** Set of power-ups used in the game */
   powerUpsUsed: Set<string>;
+  /** Set of rare letters used in words */
   rareLettersUsed: Set<string>;
+  /** Count of invalid word attempts */
   invalidAttempts: number;
+  /** Count of hints used */
   hintsUsed: number;
+  /** Available hints */
   hints?: string[];
+  /** Multiplayer specific state */
   versusState?: {
     opponentId: string;
     opponentScore: number;
     opponentChain: string[];
     timeLeft: number;
   };
+  /** UI-specific state information */
   ui: {
     showTerminalCelebration: boolean;
     currentTerminalWord: string;
@@ -102,8 +125,10 @@ export interface GameState {
       suggestedMoves?: string[];
     };
   };
-  achievements: Achievement[];
-  completionStats: {
+  /** Earned achievements */
+  achievements?: Achievement[];
+  /** Game completion statistics */
+  completionStats?: {
     underPar: boolean;
     fastSolve: boolean;
     optimalPath: boolean;
@@ -152,35 +177,34 @@ export interface GameResult {
   };
 }
 
+/**
+ * Represents a game state saved to Firebase.
+ * Used by GameStateService for persistence.
+ */
 export interface SavedGameState {
+  /** Unique identifier for the saved game */
   id: string;
+  /** User who owns this saved game */
   userId: string;
-  mode: GameMode;
-  chain: string[];
-  startWord: string;
-  targetWord?: string;
-  score: GameScore;
-  stats: ChainStats;
-  isComplete: boolean;
-  startTime: number;
-  lastMoveTime: number;
-  hintsUsed: number;
-  invalidAttempts: number;
-  wordTimings: { word: string; time: number }[];
-  terminalWords: string[];
-  powerUpsUsed: string[];
-  rareLettersUsed: string[];
-  dailyPuzzle?: {
-    date: string;
-    parMoves: number;
-  };
+  /** When the game was last saved */
   lastSaved: string;
+  /** Version of the game state format */
   version: number;
+  /** The complete game state */
+  state: GameState;
 }
 
+/**
+ * Represents an error in the game state system.
+ * Used for error tracking and recovery.
+ */
 export interface GameStateError {
+  /** Error code for categorization */
   code: string;
+  /** Human-readable error message */
   message: string;
+  /** When the error occurred */
   timestamp: string;
+  /** Partial game state when error occurred */
   gameState?: Partial<SavedGameState>;
 } 

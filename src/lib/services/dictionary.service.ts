@@ -1,14 +1,22 @@
 /**
- * Local dictionary service providing synchronous operations for performance-critical paths.
- * Works in conjunction with FirebaseDictionaryOptimized to provide a complete dictionary system.
+ * Local Dictionary Service
  * 
- * This service handles:
- * - Fast, synchronous word validation
- * - In-memory prefix lookups
- * - Client-side caching
- * - Offline support
+ * A high-performance, synchronous dictionary implementation optimized for UI responsiveness.
+ * This service is part of Tailspin's multi-tiered dictionary architecture, specifically
+ * handling performance-critical operations that require immediate feedback.
  * 
- * Usage alongside Firebase implementation:
+ * Key Responsibilities:
+ * - Synchronous word validation for UI feedback
+ * - In-memory prefix lookups for suggestions
+ * - Client-side caching for performance
+ * - Offline support for uninterrupted gameplay
+ * 
+ * Architecture Notes:
+ * This service works in conjunction with FirebaseDictionaryOptimized to provide a complete
+ * dictionary system. While FirebaseDictionary handles persistence and rich features,
+ * this service focuses on speed and responsiveness.
+ * 
+ * Usage Pattern:
  * ```typescript
  * // For async operations and persistence
  * import { dictionaryAccess } from '../dictionary/firebase-dictionary';
@@ -20,10 +28,18 @@
  * const isValidSync = dictionaryService.isValidWord("word");
  * ```
  * 
- * Performance considerations:
+ * Performance Considerations:
  * - Use this service for UI feedback and rapid validation
  * - Use FirebaseDictionaryOptimized for persistence and game state
  * - Both services maintain their own caching strategies
+ * 
+ * Memory Management:
+ * - Maintains minimal memory footprint
+ * - Uses efficient data structures (Set, Map)
+ * - Optimized for quick lookups
+ * 
+ * @see FirebaseDictionaryOptimized for persistent storage and rich features
+ * @see DictionaryAccess for the unified API
  */
 export class DictionaryService {
   private dictionary: Set<string>;

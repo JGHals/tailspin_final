@@ -1,3 +1,34 @@
+/**
+ * Game Persistence Service
+ * 
+ * Handles automatic saving and state recovery for TailSpin's game state.
+ * This service is part of the multi-tiered state architecture, specifically
+ * handling auto-save functionality, offline support, and state recovery.
+ * 
+ * Key Responsibilities:
+ * - Automatic state saving
+ * - Local storage backup
+ * - State reconstruction
+ * - Offline support
+ * 
+ * Architecture Notes:
+ * This service works in conjunction with GameStateManager and GameStateService
+ * to provide a complete state management system. While GameStateManager handles
+ * real-time state and GameStateService handles Firebase persistence, this service
+ * focuses on reliable auto-saving and recovery.
+ * 
+ * Usage Pattern:
+ * ```typescript
+ * const persistence = createGamePersistence(userId);
+ * 
+ * // Start auto-saving
+ * persistence.startAutoSave(gameState);
+ * 
+ * // Force immediate save
+ * await persistence.saveGameState(gameState, true);
+ * ```
+ */
+
 import { GameState } from '../types/game';
 import { getFirestore } from 'firebase/firestore';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
@@ -15,6 +46,13 @@ export class GamePersistenceService {
     this.db = getFirestore(app);
   }
 
+  /**
+   * Saves the current game state with optional force flag.
+   * Implements throttling to prevent excessive saves.
+   * 
+   * @param state - Current game state to save
+   * @param force - Whether to bypass the save interval check
+   */
   async saveGameState(state: GameState, force: boolean = false): Promise<void> {
     const now = Date.now();
     
@@ -52,6 +90,12 @@ export class GamePersistenceService {
     }
   }
 
+  /**
+   * Loads the most recent game state from Firebase or backup.
+   * Attempts recovery from local storage if Firebase fails.
+   * 
+   * @returns The loaded game state, or null if none found
+   */
   async loadGameState(): Promise<GameState | null> {
     try {
       const gameDoc = doc(this.db, 'game_states', this.userId);
@@ -70,6 +114,13 @@ export class GamePersistenceService {
     }
   }
 
+  /**
+   * Reconstructs a game state from raw data.
+   * Handles conversion of serialized data structures.
+   * 
+   * @param data - Raw state data to reconstruct
+   * @returns Reconstructed game state
+   */
   private reconstructGameState(data: any): GameState {
     return {
       ...data,
@@ -88,6 +139,12 @@ export class GamePersistenceService {
     };
   }
 
+  /**
+   * Attempts to load state from local storage backup.
+   * Used as fallback when Firebase is unavailable.
+   * 
+   * @returns Reconstructed game state from backup, or null if none found
+   */
   private loadBackupState(): GameState | null {
     try {
       const backup = localStorage.getItem('game_state_backup');
@@ -105,6 +162,12 @@ export class GamePersistenceService {
     }
   }
 
+  /**
+   * Starts automatic saving of game state.
+   * Saves occur at regular intervals defined by AUTOSAVE_INTERVAL.
+   * 
+   * @param state - Game state to auto-save
+   */
   startAutoSave(state: GameState): void {
     if (this.autoSaveTimer) {
       clearInterval(this.autoSaveTimer);
@@ -115,6 +178,10 @@ export class GamePersistenceService {
     }, GamePersistenceService.AUTOSAVE_INTERVAL);
   }
 
+  /**
+   * Stops automatic saving of game state.
+   * Should be called when game ends or component unmounts.
+   */
   stopAutoSave(): void {
     if (this.autoSaveTimer) {
       clearInterval(this.autoSaveTimer);
@@ -123,4 +190,11 @@ export class GamePersistenceService {
   }
 }
 
+/**
+ * Creates a new GamePersistenceService instance.
+ * Factory function for consistent service creation.
+ * 
+ * @param userId - ID of the user to create persistence for
+ * @returns New GamePersistenceService instance
+ */
 export const createGamePersistence = (userId: string) => new GamePersistenceService(userId); 

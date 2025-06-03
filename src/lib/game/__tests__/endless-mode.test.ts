@@ -261,40 +261,54 @@ describe('Endless Mode', () => {
       const corruptedState: SavedGameState = {
         id: 'test-game',
         userId: 'test-user',
-        mode: 'endless',
-        chain: ['puzzle', 'invalid', 'alliance'], // Invalid chain
-        startWord: 'puzzle',
-        score: {
-          total: 0,
-          wordScores: {},
-          multiplier: 1,
-          terminalBonus: 0,
-          dailyBonus: 0,
-          penalties: 0
-        },
-        stats: {
-          length: -1, // Invalid stat
-          uniqueLetters: new Set(['p', 'u', 'z']),
-          rareLetters: [],
-          averageWordLength: 0,
-          longestWord: '',
-          currentStreak: 0,
-          maxStreak: 0,
-          terminalWords: [],
-          branchingFactors: [],
-          pathDifficulty: 'easy'
-        },
-        isComplete: false,
-        startTime: Date.now(),
-        lastMoveTime: Date.now(),
-        hintsUsed: 0,
-        invalidAttempts: 0,
-        wordTimings: [],
-        terminalWords: [],
-        powerUpsUsed: [],
-        rareLettersUsed: [],
         lastSaved: new Date().toISOString(),
-        version: 1
+        version: 1,
+        state: {
+          mode: 'endless',
+          chain: ['puzzle', 'invalid', 'alliance'], // Invalid chain
+          startWord: 'puzzle',
+          score: {
+            total: 0,
+            wordScores: {},
+            multiplier: 1,
+            terminalBonus: 0,
+            dailyBonus: 0,
+            penalties: 0
+          },
+          stats: {
+            length: -1, // Invalid stat
+            uniqueLetters: new Set(['p', 'u', 'z']),
+            rareLetters: [],
+            averageWordLength: 0,
+            longestWord: '',
+            currentStreak: 0,
+            maxStreak: 0,
+            terminalWords: [],
+            branchingFactors: [],
+            pathDifficulty: 'easy'
+          },
+          isComplete: false,
+          startTime: Date.now(),
+          lastMoveTime: Date.now(),
+          hintsUsed: 0,
+          invalidAttempts: 0,
+          wordTimings: new Map(),
+          terminalWords: new Set(),
+          powerUpsUsed: new Set(),
+          rareLettersUsed: new Set(),
+          ui: {
+            showTerminalCelebration: false,
+            currentTerminalWord: '',
+            terminalBonus: 0,
+            isNewTerminalDiscovery: false,
+            letterTracking: {
+              usedLetters: new Set(),
+              rareLettersUsed: new Set(),
+              uniqueLetterCount: 0,
+              rareLetterCount: 0
+            }
+          }
+        }
       };
 
       (gameStateService.loadGameState as jest.Mock).mockResolvedValue({
@@ -307,7 +321,7 @@ describe('Endless Mode', () => {
           bonusPoints: 0,
           terminalPoints: 0
         },
-        stats: { ...corruptedState.stats, length: 2 }
+        stats: { ...corruptedState.state.stats, length: 2 }
       });
 
       const success = await manager.resumeGame('test-game');
@@ -668,43 +682,57 @@ describe('Endless Mode', () => {
       const savedState: SavedGameState = {
         id: 'test-game',
         userId: 'test-user',
-        mode: 'endless',
-        chain: ['test', 'tent'],
-        startWord: 'test',
-        score: {
-          total: 20,
-          wordScores: {
-            'test': { base: 10, length: 0, rareLetters: 0, streak: 0, speed: 0, total: 10 },
-            'tent': { base: 10, length: 0, rareLetters: 0, streak: 0, speed: 0, total: 10 }
-          },
-          multiplier: 1,
-          terminalBonus: 0,
-          dailyBonus: 0,
-          penalties: 0
-        },
-        stats: {
-          length: 2,
-          uniqueLetters: new Set(['t', 'e', 'n']),
-          rareLetters: [],
-          averageWordLength: 4,
-          longestWord: 'tent',
-          currentStreak: 2,
-          maxStreak: 2,
-          terminalWords: [],
-          branchingFactors: [2, 1],
-          pathDifficulty: 'easy'
-        },
-        isComplete: false,
-        startTime: Date.now() - 1000,
-        lastMoveTime: Date.now(),
-        hintsUsed: 0,
-        invalidAttempts: 0,
-        wordTimings: [{ word: 'tent', time: 1000 }],
-        terminalWords: [],
-        powerUpsUsed: [],
-        rareLettersUsed: [],
         lastSaved: new Date().toISOString(),
-        version: 1
+        version: 1,
+        state: {
+          mode: 'endless',
+          chain: ['test', 'tent'],
+          startWord: 'test',
+          score: {
+            total: 20,
+            wordScores: {
+              'test': { base: 10, length: 0, rareLetters: 0, streak: 0, speed: 0, total: 10 },
+              'tent': { base: 10, length: 0, rareLetters: 0, streak: 0, speed: 0, total: 10 }
+            },
+            multiplier: 1,
+            terminalBonus: 0,
+            dailyBonus: 0,
+            penalties: 0
+          },
+          stats: {
+            length: 2,
+            uniqueLetters: new Set(['t', 'e', 'n']),
+            rareLetters: [],
+            averageWordLength: 4,
+            longestWord: 'tent',
+            currentStreak: 2,
+            maxStreak: 2,
+            terminalWords: [],
+            branchingFactors: [2, 1],
+            pathDifficulty: 'easy'
+          },
+          isComplete: false,
+          startTime: Date.now() - 1000,
+          lastMoveTime: Date.now(),
+          hintsUsed: 0,
+          invalidAttempts: 0,
+          wordTimings: new Map([['tent', 1000]]),
+          terminalWords: new Set(),
+          powerUpsUsed: new Set(),
+          rareLettersUsed: new Set(),
+          ui: {
+            showTerminalCelebration: false,
+            currentTerminalWord: '',
+            terminalBonus: 0,
+            isNewTerminalDiscovery: false,
+            letterTracking: {
+              usedLetters: new Set(),
+              rareLettersUsed: new Set(),
+              uniqueLetterCount: 0,
+              rareLetterCount: 0
+            }
+          }
+        }
       };
 
       (gameStateService.loadGameState as jest.Mock).mockResolvedValue(savedState);
@@ -747,42 +775,56 @@ describe('Endless Mode', () => {
       const oldVersionState: SavedGameState = {
         id: 'test-game',
         userId: 'test-user',
-        mode: 'endless',
-        chain: ['test'],
-        startWord: 'test',
-        score: {
-          total: 10,
-          wordScores: {
-            'test': { base: 10, length: 0, rareLetters: 0, streak: 0, speed: 0, total: 10 }
-          },
-          multiplier: 1,
-          terminalBonus: 0,
-          dailyBonus: 0,
-          penalties: 0
-        },
-        stats: {
-          length: 1,
-          uniqueLetters: new Set(['t', 'e', 's']),
-          rareLetters: [],
-          averageWordLength: 4,
-          longestWord: 'test',
-          currentStreak: 1,
-          maxStreak: 1,
-          terminalWords: [],
-          branchingFactors: [1],
-          pathDifficulty: 'easy'
-        },
-        isComplete: false,
-        startTime: Date.now() - 1000,
-        lastMoveTime: Date.now(),
-        hintsUsed: 0,
-        invalidAttempts: 0,
-        wordTimings: [],
-        terminalWords: [],
-        powerUpsUsed: [],
-        rareLettersUsed: [],
         lastSaved: new Date().toISOString(),
-        version: 0 // Old version
+        version: 0, // Old version
+        state: {
+          mode: 'endless',
+          chain: ['test'],
+          startWord: 'test',
+          score: {
+            total: 10,
+            wordScores: {
+              'test': { base: 10, length: 0, rareLetters: 0, streak: 0, speed: 0, total: 10 }
+            },
+            multiplier: 1,
+            terminalBonus: 0,
+            dailyBonus: 0,
+            penalties: 0
+          },
+          stats: {
+            length: 1,
+            uniqueLetters: new Set(['t', 'e', 's']),
+            rareLetters: [],
+            averageWordLength: 4,
+            longestWord: 'test',
+            currentStreak: 1,
+            maxStreak: 1,
+            terminalWords: [],
+            branchingFactors: [1],
+            pathDifficulty: 'easy'
+          },
+          isComplete: false,
+          startTime: Date.now() - 1000,
+          lastMoveTime: Date.now(),
+          hintsUsed: 0,
+          invalidAttempts: 0,
+          wordTimings: new Map(),
+          terminalWords: new Set(),
+          powerUpsUsed: new Set(),
+          rareLettersUsed: new Set(),
+          ui: {
+            showTerminalCelebration: false,
+            currentTerminalWord: '',
+            terminalBonus: 0,
+            isNewTerminalDiscovery: false,
+            letterTracking: {
+              usedLetters: new Set(),
+              rareLettersUsed: new Set(),
+              uniqueLetterCount: 0,
+              rareLetterCount: 0
+            }
+          }
+        }
       };
 
       (gameStateService.loadGameState as jest.Mock).mockResolvedValue(oldVersionState);
@@ -983,32 +1025,46 @@ describe('Endless Mode', () => {
       const savedState: SavedGameState = {
         id: 'test-game',
         userId: 'test-user',
-        mode: 'endless',
-        chain: ['test'],
-        startWord: 'test',
-        score: {
-          total: 0,
-          wordScores: {},
-          multiplier: 1,
-          terminalBonus: 0,
-          dailyBonus: 0,
-          penalties: 0
-        },
-        stats: {
-          ...firstState.stats,
-          uniqueLetters: new Set(['t', 'e', 's'])
-        },
-        isComplete: false,
-        startTime: Date.now() - 1000,
-        lastMoveTime: Date.now(),
-        hintsUsed: 0,
-        invalidAttempts: 0,
-        wordTimings: [],
-        terminalWords: terminalWords,
-        powerUpsUsed: [],
-        rareLettersUsed: [],
         lastSaved: new Date().toISOString(),
-        version: 1
+        version: 1,
+        state: {
+          mode: 'endless',
+          chain: ['test'],
+          startWord: 'test',
+          score: {
+            total: 0,
+            wordScores: {},
+            multiplier: 1,
+            terminalBonus: 0,
+            dailyBonus: 0,
+            penalties: 0
+          },
+          stats: {
+            ...firstState.stats,
+            uniqueLetters: new Set(['t', 'e', 's'])
+          },
+          isComplete: false,
+          startTime: Date.now() - 1000,
+          lastMoveTime: Date.now(),
+          hintsUsed: 0,
+          invalidAttempts: 0,
+          wordTimings: new Map(),
+          terminalWords: new Set(terminalWords),
+          powerUpsUsed: new Set(),
+          rareLettersUsed: new Set(),
+          ui: {
+            showTerminalCelebration: false,
+            currentTerminalWord: '',
+            terminalBonus: 0,
+            isNewTerminalDiscovery: false,
+            letterTracking: {
+              usedLetters: new Set(),
+              rareLettersUsed: new Set(),
+              uniqueLetterCount: 0,
+              rareLetterCount: 0
+            }
+          }
+        }
       };
 
       // Resume in new session
@@ -1575,40 +1631,54 @@ describe('Endless Mode', () => {
       const savedState: SavedGameState = {
         id: 'test-game',
         userId: 'test-user',
-        mode: 'endless',
-        chain: ['test', ...words],
-        startWord: 'test',
-        score: {
-          total: scores[scores.length - 1],
-          wordScores: {},
-          multiplier: 1,
-          terminalBonus: 0,
-          dailyBonus: 0,
-          penalties: 0
-        },
-        stats: {
-          length: words.length + 1,
-          uniqueLetters: new Set(['t', 'e', 's', 't']),
-          rareLetters: [],
-          averageWordLength: 4,
-          longestWord: 'test',
-          currentStreak: words.length + 1,
-          maxStreak: words.length + 1,
-          terminalWords: [],
-          branchingFactors: Array(words.length + 1).fill(2),
-          pathDifficulty: 'easy'
-        },
-        isComplete: false,
-        startTime: Date.now() - 1000,
-        lastMoveTime: Date.now(),
-        hintsUsed: 0,
-        invalidAttempts: 0,
-        wordTimings: words.map((word, i) => ({ word, time: 1000 * (i + 1) })),
-        terminalWords: [],
-        powerUpsUsed: [],
-        rareLettersUsed: [],
         lastSaved: new Date().toISOString(),
-        version: 1
+        version: 1,
+        state: {
+          mode: 'endless',
+          chain: ['test', ...words],
+          startWord: 'test',
+          score: {
+            total: scores[scores.length - 1],
+            wordScores: {},
+            multiplier: 1,
+            terminalBonus: 0,
+            dailyBonus: 0,
+            penalties: 0
+          },
+          stats: {
+            length: words.length + 1,
+            uniqueLetters: new Set(['t', 'e', 's', 't']),
+            rareLetters: [],
+            averageWordLength: 4,
+            longestWord: 'test',
+            currentStreak: words.length + 1,
+            maxStreak: words.length + 1,
+            terminalWords: [],
+            branchingFactors: Array(words.length + 1).fill(2),
+            pathDifficulty: 'easy'
+          },
+          isComplete: false,
+          startTime: Date.now() - 1000,
+          lastMoveTime: Date.now(),
+          hintsUsed: 0,
+          invalidAttempts: 0,
+          wordTimings: new Map(words.map((word, i) => [word, 1000 * (i + 1)])),
+          terminalWords: new Set(),
+          powerUpsUsed: new Set(),
+          rareLettersUsed: new Set(),
+          ui: {
+            showTerminalCelebration: false,
+            currentTerminalWord: '',
+            terminalBonus: 0,
+            isNewTerminalDiscovery: false,
+            letterTracking: {
+              usedLetters: new Set(),
+              rareLettersUsed: new Set(),
+              uniqueLetterCount: 0,
+              rareLetterCount: 0
+            }
+          }
+        }
       };
 
       // Resume game
