@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
-module.exports = {
+const nextConfig = {
   reactStrictMode: true,
+  swcMinify: true,
+  compiler: {
+    styledComponents: true,
+  },
+  experimental: {
+    swcPlugins: [],
+    serverComponentsExternalPackages: ['undici']
+  },
   env: {
     // Public Firebase Config
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -22,6 +30,8 @@ module.exports = {
     ignoreBuildErrors: true // We'll fix type errors separately
   },
   transpilePackages: [
+    'firebase', 
+    '@firebase/auth',
     '@radix-ui/react-accordion',
     '@radix-ui/react-alert-dialog',
     '@radix-ui/react-aspect-ratio',
@@ -50,5 +60,19 @@ module.exports = {
     '@radix-ui/react-toggle-group',
     '@radix-ui/react-tooltip',
     'lucide-react'
-  ]
-} 
+  ],
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        undici: false
+      };
+    }
+    return config;
+  },
+}
+
+export default nextConfig 

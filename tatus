@@ -1,0 +1,5 @@
+[33mcommit 13013c42e4313ef646ee3eaa4db0847a7f6f4a66[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: JGHals <grant@halseide.com>
+Date:   Mon Jun 2 21:19:49 2025 +0000
+
+    feat(infrastructure): Major infrastructure & testing update - Add ConnectionManager, useConnection hook, tiered caching system, GamePersistenceService, ErrorRecoveryService, comprehensive tests, and documentation updates

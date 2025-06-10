@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { DynamicIcon } from "lucide-react/dynamic"
+import { Lightbulb } from "lucide-react"
 import { useGame } from "@/lib/contexts/GameContext"
 import { useState } from "react"
 import { getHintWords } from "@/lib/game-utils"
@@ -35,7 +35,7 @@ export function HintModal({ open, onOpenChange }: HintModalProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl">
-            <DynamicIcon name="lightbulb" className="h-5 w-5 mr-2 text-yellow-500" />
+            <Lightbulb className="h-5 w-5 mr-2 text-yellow-500" />
             Word Hints
           </DialogTitle>
           <DialogDescription>

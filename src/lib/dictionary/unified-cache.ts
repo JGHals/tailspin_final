@@ -25,7 +25,7 @@ interface UnifiedCacheConfig {
 
 /**
  * Unified caching system that supports both dictionary implementations.
- * Provides tiered caching with memory and localStorage options.
+ * Server-safe implementation using only memory cache.
  */
 export class UnifiedCache<T> {
   private memoryCache: Map<string, CacheEntry<T>>;
@@ -57,13 +57,13 @@ export class UnifiedCache<T> {
   }
 
   /**
-   * Get item from cache, checking both memory and localStorage
+   * Get item from cache
    */
-  protected getSync(key: string): T | null {
+  async get(key: string): Promise<T | null> {
     const cacheKey = `${this.config.namespace}_${key}`;
     this.stats.totalAccesses++;
     
-    // Check memory cache first
+    // Check memory cache
     const memoryItem = this.memoryCache.get(cacheKey);
     if (memoryItem && Date.now() < memoryItem.timestamp + this.config.ttl) {
       this.stats.hits++;
@@ -76,31 +76,14 @@ export class UnifiedCache<T> {
       this.memoryCache.delete(cacheKey);
     }
 
-    // Check localStorage
-    const storageItem = localStorage.getItem(cacheKey);
-    if (storageItem) {
-      try {
-        const entry = JSON.parse(storageItem) as CacheEntry<T>;
-        if (Date.now() < entry.timestamp + this.config.ttl) {
-          // Promote to memory cache
-          this.memoryCache.set(cacheKey, entry);
-          this.stats.hits++;
-          return entry.data;
-        }
-        localStorage.removeItem(cacheKey);
-      } catch (e) {
-        localStorage.removeItem(cacheKey);
-      }
-    }
-
     this.stats.misses++;
     return null;
   }
 
   /**
-   * Set item in both memory and localStorage caches
+   * Set item in cache
    */
-  protected setSync(key: string, value: T): void {
+  async set(key: string, value: T): Promise<void> {
     const cacheKey = `${this.config.namespace}_${key}`;
     const entry: CacheEntry<T> = {
       data: value,
@@ -123,40 +106,6 @@ export class UnifiedCache<T> {
         this.memoryCache.delete(oldestKey);
       }
     }
-
-    // Set in localStorage
-    try {
-      localStorage.setItem(cacheKey, JSON.stringify(entry));
-    } catch (e) {
-      // If localStorage is full, clear old items
-      this.clearOldStorageItems();
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify(entry));
-      } catch (e) {
-        // If still fails, just use memory cache
-        console.warn('localStorage full, using memory cache only');
-      }
-    }
-  }
-
-  /**
-   * Clear expired items from localStorage
-   */
-  private clearOldStorageItems(): void {
-    const now = Date.now();
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(this.config.namespace)) {
-        try {
-          const entry = JSON.parse(localStorage.getItem(key)!) as CacheEntry<T>;
-          if (now >= entry.timestamp + this.config.ttl) {
-            localStorage.removeItem(key);
-          }
-        } catch (e) {
-          localStorage.removeItem(key);
-        }
-      }
-    }
   }
 
   /**
@@ -164,13 +113,6 @@ export class UnifiedCache<T> {
    */
   clear(): void {
     this.memoryCache.clear();
-    // Only clear items in our namespace
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(this.config.namespace)) {
-        localStorage.removeItem(key);
-      }
-    }
     this.stats = {
       hits: 0,
       misses: 0,
@@ -182,19 +124,10 @@ export class UnifiedCache<T> {
   /**
    * Get cache statistics
    */
-  protected getStats(): CacheStats & { memoryCacheSize: number; localStorageSize: number } {
-    let localStorageSize = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(this.config.namespace)) {
-        localStorageSize++;
-      }
-    }
-    
+  getStats(): CacheStats & { memoryCacheSize: number } {
     return {
       ...this.stats,
-      memoryCacheSize: this.memoryCache.size,
-      localStorageSize
+      memoryCacheSize: this.memoryCache.size
     };
   }
 }
@@ -204,16 +137,8 @@ export class DictionaryUnifiedCache extends UnifiedCache<string[]> implements Di
     super({
       maxEntries: CACHE_CONFIG.maxEntries,
       ttl: CACHE_CONFIG.ttl,
-      namespace: CACHE_KEYS.DICTIONARY_DATA
+      namespace: CACHE_CONFIG.dictionary
     });
-  }
-
-  async get(key: string): Promise<string[] | null> {
-    return this.getSync(key);
-  }
-
-  async set(key: string, value: string[]): Promise<void> {
-    this.setSync(key, value);
   }
 
   getAnalytics(): CacheAnalytics {
@@ -221,10 +146,10 @@ export class DictionaryUnifiedCache extends UnifiedCache<string[]> implements Di
     return {
       hits: stats.hits,
       misses: stats.misses,
-      evictions: 0, // Not tracked in base implementation
+      evictions: 0, // Not tracked in memory-only implementation
       totalAccesses: stats.totalAccesses,
-      averageAccessTime: 0, // Not tracked in base implementation
-      popularPrefixes: new Map() // Not tracked in base implementation
+      averageAccessTime: 0, // Not tracked in memory-only implementation
+      popularPrefixes: new Map() // Not tracked in memory-only implementation
     };
   }
 
@@ -234,10 +159,10 @@ export class DictionaryUnifiedCache extends UnifiedCache<string[]> implements Di
 
   getHitRate(): number {
     const stats = this.getStats();
-    return stats.totalAccesses === 0 ? 0 : stats.hits / stats.totalAccesses;
+    return stats.hits / (stats.hits + stats.misses);
   }
 
   getCurrentMemoryUsage(): number {
-    return this.getStats().memoryCacheSize * 1024; // Rough estimate in bytes
+    return process.memoryUsage().heapUsed;
   }
 } 
